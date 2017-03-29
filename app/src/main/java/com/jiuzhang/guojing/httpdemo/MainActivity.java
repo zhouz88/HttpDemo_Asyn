@@ -4,11 +4,10 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.TextView;
 
-import java.io.IOException;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
 
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import cz.msebera.android.httpclient.Header;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -17,28 +16,22 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Request request = new Request.Builder()
-                        .url("https://www.google.com")
-                        .build();
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.get("https://www.google.com", new AsyncHttpResponseHandler() {
 
-                OkHttpClient client = new OkHttpClient();
-                try {
-                    Response response = client.newCall(request).execute();
-                    final String responseString = response.body().string();
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            TextView textView = (TextView) findViewById(R.id.text_view);
-                            textView.setText(responseString);
-                        }
-                    });
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] response) {
+                // called when response HTTP status is "200 OK"
+                TextView textView = (TextView) findViewById(R.id.text_view);
+                textView.setText(new String(response));
             }
-        }).start();
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] errorResponse, Throwable e) {
+                // called when response HTTP status is "4XX" (eg. 401, 403, 404)
+                TextView textView = (TextView) findViewById(R.id.text_view);
+                textView.setText("Error, status code: " + statusCode);
+            }
+        });
     }
 }
